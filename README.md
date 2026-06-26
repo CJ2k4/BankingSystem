@@ -13,9 +13,28 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased 
 
 ## Project status
 
-**Phase 0 — Scaffold & infra ✅** (current)
-Working backend + frontend + infra skeleton. Later phases add auth, accounts/ledger,
-transfers, cards/payments, and loans.
+- **Phase 0 — Scaffold & infra ✅**
+- **Phase 1 — Auth & users ✅** (current) — registration, login, JWT access +
+  rotating refresh tokens (Redis), RBAC, KYC profiles, admin verification, and a
+  React signup/login/profile UI.
+
+Later phases add accounts/ledger, transfers, cards/payments, and loans.
+
+### Auth API (Phase 1)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/auth/register` | public | Create a customer, returns tokens |
+| POST | `/api/v1/auth/login` | public | Authenticate, returns tokens |
+| POST | `/api/v1/auth/refresh` | public | Rotate refresh token → new pair |
+| POST | `/api/v1/auth/logout` | public | Revoke a refresh token |
+| GET | `/api/v1/users/me` | bearer | Current user + KYC profile |
+| PUT | `/api/v1/users/me/profile` | bearer | Update KYC profile |
+| GET | `/api/v1/admin/users` | ADMIN | List all customer profiles |
+| POST | `/api/v1/admin/users/{id}/kyc` | ADMIN | Set KYC status |
+
+**Demo admin** (seeded at startup): `admin@bank.local` / `Admin123!`
+(override via `ADMIN_EMAIL` / `ADMIN_PASSWORD`).
 
 ## Prerequisites
 
