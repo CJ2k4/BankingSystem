@@ -14,11 +14,27 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased 
 ## Project status
 
 - **Phase 0 — Scaffold & infra ✅**
-- **Phase 1 — Auth & users ✅** (current) — registration, login, JWT access +
-  rotating refresh tokens (Redis), RBAC, KYC profiles, admin verification, and a
-  React signup/login/profile UI.
+- **Phase 1 — Auth & users ✅** — registration, login, JWT access + rotating
+  refresh tokens (Redis), RBAC, KYC profiles, admin verification, signup/login/profile UI.
+- **Phase 2 — Accounts & ledger ✅** (current) — open accounts, deposits/withdrawals
+  on a **double-entry ledger** (balanced debit/credit entries, `BigDecimal`, pessimistic
+  locking, running balance), a dashboard + account detail UI with transaction history.
 
-Later phases add accounts/ledger, transfers, cards/payments, and loans.
+Later phases add transfers, cards/payments, and loans.
+
+### Accounts API (Phase 2)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/accounts` | bearer | Open an account (CHECKING/SAVINGS) |
+| GET | `/api/v1/accounts` | bearer | List my accounts |
+| GET | `/api/v1/accounts/{id}` | bearer | Get one account |
+| POST | `/api/v1/accounts/{id}/deposit` | bearer | Deposit (amount) |
+| POST | `/api/v1/accounts/{id}/withdraw` | bearer | Withdraw (amount, no overdraft) |
+| GET | `/api/v1/accounts/{id}/transactions` | bearer | Transaction history (newest first) |
+
+Every money movement posts a balanced set of ledger entries (debits + credits net to
+zero) against the customer account and a system settlement account, in one DB transaction.
 
 ### Auth API (Phase 1)
 
