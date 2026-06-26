@@ -8,6 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
+import DashboardPage from './pages/DashboardPage'
+import AccountDetailPage from './pages/AccountDetailPage'
 
 const queryClient = new QueryClient()
 
@@ -21,6 +23,22 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/signup" element={<SignupPage />} />
             <Route
               path="/"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/accounts/:id"
+              element={
+                <ProtectedRoute>
+                  <AccountDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <ProfilePage />

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { updateProfile, type UpdateProfilePayload } from '../lib/api'
 import { apiErrorMessage } from '../lib/errors'
+import AppLayout from '../components/AppLayout'
 
 const KYC_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-800',
@@ -10,7 +11,7 @@ const KYC_STYLES: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const { user, logout, refreshUser } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [form, setForm] = useState<UpdateProfilePayload>({
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
@@ -47,23 +48,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <span className="font-semibold">🏦 Banking System</span>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-500">{user.email}</span>
-            <button
-              onClick={logout}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
-            >
-              Log out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-6 py-8 space-y-6">
+    <AppLayout>
+      <div className="space-y-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Account</h2>
@@ -105,8 +91,8 @@ export default function ProfilePage() {
             </div>
           </form>
         </section>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   )
 }
 
