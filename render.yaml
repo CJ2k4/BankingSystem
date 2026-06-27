@@ -1,21 +1,11 @@
-# Render Blueprint — provisions the backend, Postgres, and Redis (Key Value).
-# Render has no managed Kafka, so the event pipeline is disabled in this deploy
-# (EVENTS_ENABLED=false); the publisher no-ops and core banking is unaffected.
-# Frontend is deployed separately on Vercel.
-
-databases:
-  - name: banking-postgres
-    plan: free
-    databaseName: banking
-    user: banking
+# Render Blueprint — backend Web Service only (no managed DB, so no card required).
+# Use external free, card-free services for data:
+#   - Postgres: Neon (neon.tech)   -> DB_URL / DB_USERNAME / DB_PASSWORD
+#   - Redis:    Upstash (upstash.com) -> REDIS_HOST / REDIS_PORT / REDIS_PASSWORD / REDIS_SSL
+# Render has no managed Kafka, so the event pipeline is disabled (EVENTS_ENABLED=false);
+# the publisher no-ops and core banking is unaffected. Frontend deploys on Vercel.
 
 services:
-  - type: redis
-    name: banking-redis
-    plan: free
-    ipAllowList: []          # internal only
-    maxmemoryPolicy: noeviction
-
   - type: web
     name: banking-backend
     runtime: docker
@@ -30,21 +20,22 @@ services:
         value: "false"
       - key: SEED_DEMO
         value: "true"
-      - key: DB_HOST
-        fromDatabase: { name: banking-postgres, property: host }
-      - key: DB_PORT
-        fromDatabase: { name: banking-postgres, property: port }
-      - key: DB_NAME
-        fromDatabase: { name: banking-postgres, property: database }
-      - key: DB_USERNAME
-        fromDatabase: { name: banking-postgres, property: user }
-      - key: DB_PASSWORD
-        fromDatabase: { name: banking-postgres, property: password }
-      - key: REDIS_HOST
-        fromService: { name: banking-redis, type: redis, property: host }
-      - key: REDIS_PORT
-        fromService: { name: banking-redis, type: redis, property: port }
       - key: JWT_SECRET
         generateValue: true
-      - key: CORS_ALLOWED_ORIGINS
-        sync: false           # set to the Vercel URL after the frontend is deployed
+      # --- set these in the Render dashboard (from Neon / Upstash) ---
+      - key: DB_URL          # jdbc:postgresql://<neon-host>/<db>?sslmode=require
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_SSL
+        value: "true"
+      - key: CORS_ALLOWED_ORIGINS   # the Vercel URL, set after the frontend deploys
+        sync: false
