@@ -182,8 +182,13 @@ Backend + Postgres + Redis → **Render** (via the `render.yaml` Blueprint); fro
 > publisher no-ops; notifications/audit are demoed locally). Real email: `SPRING_MAIL_HOST/...`.
 > Real Stripe: `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`.
 
-> **Live demo:** _link added after deploy_ · **Demo login:** `demo@bank.local` / `Demo123!`
-> · **Admin:** `admin@bank.local` / `Admin123!`
+> **Live demo:** https://frontend-eosin-delta-qo07y0sr3z.vercel.app
+> · **API:** https://MrCJ123-banking-system.hf.space (`/swagger-ui.html`, `/actuator/health`)
+> · **Demo login:** `demo@bank.local` / `Demo123!` · **Admin:** `admin@bank.local` / `Admin123!`
+>
+> Hosting: frontend on **Vercel**, backend on **Hugging Face Spaces** (Docker), Postgres on
+> **Neon**, Redis on **Upstash** — all free tiers. Kafka isn't hosted, so notifications/audit
+> are demoed locally; everything else runs live.
 
 ## Test
 
