@@ -3,6 +3,7 @@ package com.bank.common;
 import com.bank.common.exception.ConflictException;
 import com.bank.common.exception.InsufficientFundsException;
 import com.bank.common.exception.NotFoundException;
+import com.bank.common.exception.PaymentDeclinedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +66,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<ApiError> handleInsufficientFunds(InsufficientFundsException ex,
                                                             HttpServletRequest request) {
+        return status(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(PaymentDeclinedException.class)
+    public ResponseEntity<ApiError> handlePaymentDeclined(PaymentDeclinedException ex,
+                                                          HttpServletRequest request) {
         return status(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 

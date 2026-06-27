@@ -19,11 +19,38 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased 
 - **Phase 2 — Accounts & ledger ✅** — open accounts, deposits/withdrawals on a
   **double-entry ledger** (balanced debit/credit entries, `BigDecimal`, pessimistic
   locking, running balance), dashboard + account detail UI with transaction history.
-- **Phase 3 — Transfers & beneficiaries ✅** (current) — account-to-account transfers
-  with **idempotency keys** (a retried request never double-spends), saved payees, and a
-  transfer UI. Transfers reuse the ledger, so they post atomically and balance to zero.
+- **Phase 3 — Transfers & beneficiaries ✅** — account-to-account transfers with
+  **idempotency keys** (a retried request never double-spends), saved payees, transfer UI.
+- **Phase 4 — Cards & payments ✅** (current) — tokenized **virtual cards** (one-time PAN,
+  freeze/cancel, monthly spend limits), card purchases that debit the account via the ledger,
+  and **account top-ups** through a **Stripe**-or-simulated payment gateway (idempotent
+  fulfilment). Cards UI + top-up flow included.
 
-Later phases add cards/payments and loans.
+Later phases add loans.
+
+### Cards & Payments API (Phase 4)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/cards` | bearer | Issue a virtual card (full number returned once) |
+| GET | `/api/v1/cards` | bearer | List my cards |
+| POST | `/api/v1/cards/{id}/freeze` `/unfreeze` `/cancel` | bearer | Card lifecycle |
+| POST | `/api/v1/cards/{id}/pay` | bearer | Card purchase (debits the account) |
+| POST | `/api/v1/payments/top-up` | bearer | Start a top-up (gateway intent) |
+| POST | `/api/v1/payments/{id}/confirm` | bearer | Confirm a top-up (simulated gateway) |
+| POST | `/api/v1/payments/webhook` | public | Stripe-signed webhook (real mode) |
+
+**Payment gateway:** runs in **simulated** mode by default (no secrets — top-ups confirm via
+the `/confirm` endpoint). Set `STRIPE_SECRET_KEY` to switch to **real Stripe test mode**
+(PaymentIntents + signature-verified webhooks):
+
+```bash
+# .env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+# forward Stripe webhooks to the app, then pay with test card 4242 4242 4242 4242
+stripe listen --forward-to localhost:8080/api/v1/payments/webhook
+```
 
 ### Transfers API (Phase 3)
 

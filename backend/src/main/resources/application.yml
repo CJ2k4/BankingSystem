@@ -55,3 +55,7 @@ app:
   seed:
     admin-email: ${ADMIN_EMAIL:admin@bank.local}
     admin-password: ${ADMIN_PASSWORD:Admin123!}
+  stripe:
+    # When secret-key is blank the app uses the simulated payment gateway.
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}

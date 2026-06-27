@@ -3,5 +3,7 @@ package com.bank.ledger.domain;
 public enum TransactionType {
     DEPOSIT,
     WITHDRAWAL,
-    TRANSFER
+    TRANSFER,
+    CARD_PAYMENT,
+    TOP_UP
 }

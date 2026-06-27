@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import AccountDetailPage from './pages/AccountDetailPage'
 import TransferPage from './pages/TransferPage'
+import CardsPage from './pages/CardsPage'
 
 const queryClient = new QueryClient()
 
@@ -43,6 +44,14 @@ createRoot(document.getElementById('root')!).render(
               element={
                 <ProtectedRoute>
                   <TransferPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cards"
+              element={
+                <ProtectedRoute>
+                  <CardsPage />
                 </ProtectedRoute>
               }
             />
