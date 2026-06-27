@@ -21,12 +21,28 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased 
   locking, running balance), dashboard + account detail UI with transaction history.
 - **Phase 3 — Transfers & beneficiaries ✅** — account-to-account transfers with
   **idempotency keys** (a retried request never double-spends), saved payees, transfer UI.
-- **Phase 4 — Cards & payments ✅** (current) — tokenized **virtual cards** (one-time PAN,
-  freeze/cancel, monthly spend limits), card purchases that debit the account via the ledger,
-  and **account top-ups** through a **Stripe**-or-simulated payment gateway (idempotent
-  fulfilment). Cards UI + top-up flow included.
+- **Phase 4 — Cards & payments ✅** — tokenized **virtual cards** (one-time PAN, freeze/cancel,
+  monthly spend limits), card purchases that debit the account, and **account top-ups** through a
+  **Stripe**-or-simulated payment gateway (idempotent fulfilment).
+- **Phase 5 — Loans & interest ✅** (current) — loan applications (KYC-gated), admin approval that
+  generates an **amortization schedule** and disburses the principal, installment **repayments**,
+  and a **scheduled job** that flags overdue installments. All disbursements/repayments flow
+  through the ledger. Loans UI + (admin) approvals panel.
 
-Later phases add loans.
+The five core banking domains are complete. Remaining roadmap: notifications, audit log, observability, and deployment.
+
+### Loans API (Phase 5)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/loans` | bearer | Apply for a loan (requires verified KYC) |
+| GET | `/api/v1/loans` `/{id}` | bearer | List / view loan + amortization schedule |
+| POST | `/api/v1/loans/{id}/repay` | bearer | Pay the next installment |
+| GET | `/api/v1/admin/loans` | ADMIN | List loans (optional `?status=PENDING`) |
+| POST | `/api/v1/admin/loans/{id}/approve` `/reject` | ADMIN | Approve (disburse + schedule) / reject |
+
+Equal monthly payments via the standard amortization formula (`BigDecimal`, configurable
+`app.loans.annual-rate`, default 12%). A daily `@Scheduled` job marks overdue installments.
 
 ### Cards & Payments API (Phase 4)
 

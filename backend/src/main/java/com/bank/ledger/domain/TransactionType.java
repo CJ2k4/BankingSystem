@@ -5,5 +5,7 @@ public enum TransactionType {
     WITHDRAWAL,
     TRANSFER,
     CARD_PAYMENT,
-    TOP_UP
+    TOP_UP,
+    LOAN_DISBURSEMENT,
+    LOAN_REPAYMENT
 }
