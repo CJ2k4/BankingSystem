@@ -41,5 +41,8 @@ public abstract class AbstractIntegrationTest {
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
         registry.add("app.jwt.secret", () -> "test-secret-0123456789-0123456789-banking-system-key");
+        // Disable per-IP auth rate limiting so the many register/login calls across the
+        // suite (all from 127.0.0.1) don't trip it. The filter is unit-tested separately.
+        registry.add("app.ratelimit.enabled", () -> "false");
     }
 }

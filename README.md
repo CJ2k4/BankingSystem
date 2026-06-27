@@ -158,6 +158,32 @@ cd frontend && npm install && npm run dev
 docker compose --profile full up --build
 ```
 
+### Observability (local)
+
+```bash
+docker compose --profile monitoring up -d   # Prometheus :9090 + Grafana :3000 (admin/admin)
+# backend exposes metrics at /actuator/prometheus; Grafana auto-loads the "Banking System" dashboard
+```
+
+## Deployment
+
+Frontend → **Vercel**, backend + Postgres + Redis + Kafka → **Railway**.
+
+1. **Backend (Railway):** new project → add **Postgres**, **Redis**, and **Kafka** services →
+   add a service from this repo with **root directory `backend`** (uses `backend/Dockerfile` +
+   `backend/railway.json`). Set env vars: `SPRING_PROFILES_ACTIVE=prod`, `DB_URL`/`DB_USERNAME`/
+   `DB_PASSWORD` (from the PG plugin), `REDIS_HOST`/`REDIS_PORT`, `SPRING_KAFKA_BOOTSTRAP_SERVERS`,
+   a long `JWT_SECRET`, `SEED_DEMO=true`, and `CORS_ALLOWED_ORIGINS=https://<your-app>.vercel.app`.
+2. **Frontend (Vercel):** import `frontend/`, set `VITE_API_BASE_URL=https://<backend>.up.railway.app`,
+   deploy (`vercel.json` handles SPA routing).
+3. Point `CORS_ALLOWED_ORIGINS` at the Vercel domain; open the site and sign in with the demo creds.
+
+Real email: set `SPRING_MAIL_HOST`/`SPRING_MAIL_USERNAME`/`SPRING_MAIL_PASSWORD` (e.g. Mailtrap).
+Real Stripe: set `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`.
+
+> **Live demo:** _link added after deploy_ · **Demo login:** `demo@bank.local` / `Demo123!`
+> · **Admin:** `admin@bank.local` / `Admin123!`
+
 ## Test
 
 ```bash
