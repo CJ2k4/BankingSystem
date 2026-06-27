@@ -20,14 +20,20 @@ public class EventPublisher {
 
     private final KafkaTemplate<String, DomainEvent> kafkaTemplate;
     private final String topic;
+    private final boolean enabled;
 
     public EventPublisher(KafkaTemplate<String, DomainEvent> kafkaTemplate,
-                          @Value("${app.events.topic:banking.events}") String topic) {
+                          @Value("${app.events.topic:banking.events}") String topic,
+                          @Value("${app.events.enabled:true}") boolean enabled) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
+        this.enabled = enabled;
     }
 
     public void publish(DomainEvent event) {
+        if (!enabled) {
+            return; // event pipeline disabled (e.g. a deployment without Kafka)
+        }
         try {
             kafkaTemplate.send(topic, key(event), event);
         } catch (Exception e) {

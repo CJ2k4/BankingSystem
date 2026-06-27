@@ -2,6 +2,7 @@ package com.bank.notification.messaging;
 
 import com.bank.common.event.DomainEvent;
 import com.bank.notification.service.NotificationService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
  * audit consumer.
  */
 @Component
+@ConditionalOnProperty(name = "app.events.enabled", havingValue = "true", matchIfMissing = true)
 public class NotificationConsumer {
 
     private final NotificationService notificationService;

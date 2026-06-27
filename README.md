@@ -167,19 +167,20 @@ docker compose --profile monitoring up -d   # Prometheus :9090 + Grafana :3000 (
 
 ## Deployment
 
-Frontend → **Vercel**, backend + Postgres + Redis + Kafka → **Railway**.
+Backend + Postgres + Redis → **Render** (via the `render.yaml` Blueprint); frontend → **Vercel**.
 
-1. **Backend (Railway):** new project → add **Postgres**, **Redis**, and **Kafka** services →
-   add a service from this repo with **root directory `backend`** (uses `backend/Dockerfile` +
-   `backend/railway.json`). Set env vars: `SPRING_PROFILES_ACTIVE=prod`, `DB_URL`/`DB_USERNAME`/
-   `DB_PASSWORD` (from the PG plugin), `REDIS_HOST`/`REDIS_PORT`, `SPRING_KAFKA_BOOTSTRAP_SERVERS`,
-   a long `JWT_SECRET`, `SEED_DEMO=true`, and `CORS_ALLOWED_ORIGINS=https://<your-app>.vercel.app`.
-2. **Frontend (Vercel):** import `frontend/`, set `VITE_API_BASE_URL=https://<backend>.up.railway.app`,
+1. **Backend (Render):** New → **Blueprint** → connect this repo. Render reads `render.yaml` and
+   provisions the **web service** (Docker, root dir `backend`), **Postgres**, and **Redis** with all
+   env wired automatically (`JWT_SECRET` auto-generated, `SEED_DEMO=true`). After the first deploy,
+   set `CORS_ALLOWED_ORIGINS` to your Vercel URL.
+2. **Frontend (Vercel):** import `frontend/`, set `VITE_API_BASE_URL=https://<backend>.onrender.com`,
    deploy (`vercel.json` handles SPA routing).
-3. Point `CORS_ALLOWED_ORIGINS` at the Vercel domain; open the site and sign in with the demo creds.
+3. Point the backend's `CORS_ALLOWED_ORIGINS` at the Vercel domain; open the site and sign in.
 
-Real email: set `SPRING_MAIL_HOST`/`SPRING_MAIL_USERNAME`/`SPRING_MAIL_PASSWORD` (e.g. Mailtrap).
-Real Stripe: set `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`.
+> Render's free Postgres expires after ~30 days and the free web service cold-starts after
+> inactivity. **Kafka isn't offered on Render**, so this deploy sets `EVENTS_ENABLED=false` (the
+> publisher no-ops; notifications/audit are demoed locally). Real email: `SPRING_MAIL_HOST/...`.
+> Real Stripe: `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`.
 
 > **Live demo:** _link added after deploy_ · **Demo login:** `demo@bank.local` / `Demo123!`
 > · **Admin:** `admin@bank.local` / `Admin123!`
