@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import AppLayout from '../components/AppLayout'
-import { deposit, getAccount, listTransactions, withdraw } from '../lib/accounts'
+import { getAccount, listTransactions, withdraw } from '../lib/accounts'
 import { confirmTopUp, createTopUp } from '../lib/payments'
 import { formatDateTime, formatMoney } from '../lib/format'
 import { apiErrorMessage } from '../lib/errors'
@@ -23,11 +23,6 @@ export default function AccountDetailPage() {
     setError(null)
   }
 
-  const depositM = useMutation({
-    mutationFn: () => deposit(id, Number(amount)),
-    onSuccess: refresh,
-    onError: (e) => setError(apiErrorMessage(e)),
-  })
   const withdrawM = useMutation({
     mutationFn: () => withdraw(id, Number(amount)),
     onSuccess: refresh,
@@ -49,7 +44,7 @@ export default function AccountDetailPage() {
   })
 
   const account = accountQ.data
-  const busy = depositM.isPending || withdrawM.isPending || topUpM.isPending
+  const busy = withdrawM.isPending || topUpM.isPending
   const valid = Number(amount) > 0
 
   return (
@@ -88,11 +83,12 @@ export default function AccountDetailPage() {
                 />
               </label>
               <button
-                onClick={() => depositM.mutate()}
+                onClick={() => topUpM.mutate()}
                 disabled={!valid || busy}
                 className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                title="Add money via the payment gateway (card)"
               >
-                Deposit
+                Add money
               </button>
               <button
                 onClick={() => withdrawM.mutate()}
@@ -100,14 +96,6 @@ export default function AccountDetailPage() {
                 className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 disabled:opacity-50"
               >
                 Withdraw
-              </button>
-              <button
-                onClick={() => topUpM.mutate()}
-                disabled={!valid || busy}
-                className="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50 disabled:opacity-50"
-                title="Add money via the payment gateway (card)"
-              >
-                Add money
               </button>
             </div>
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}

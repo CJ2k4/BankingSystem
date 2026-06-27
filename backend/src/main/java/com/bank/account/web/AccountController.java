@@ -56,13 +56,6 @@ public class AccountController {
         return AccountResponse.from(accountService.getAccount(SecurityUtils.currentUserId(), accountId));
     }
 
-    @PostMapping("/{accountId}/deposit")
-    @Operation(summary = "Deposit money into an account")
-    public AccountResponse deposit(@PathVariable UUID accountId, @Valid @RequestBody AmountRequest request) {
-        return AccountResponse.from(
-                accountService.deposit(SecurityUtils.currentUserId(), accountId, request.amount()));
-    }
-
     @PostMapping("/{accountId}/withdraw")
     @Operation(summary = "Withdraw money from an account")
     public AccountResponse withdraw(@PathVariable UUID accountId, @Valid @RequestBody AmountRequest request) {

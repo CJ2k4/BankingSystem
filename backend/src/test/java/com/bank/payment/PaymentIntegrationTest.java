@@ -2,12 +2,8 @@ package com.bank.payment;
 
 import com.bank.AbstractIntegrationTest;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,34 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@AutoConfigureMockMvc
 class PaymentIntegrationTest extends AbstractIntegrationTest {
-
-    @Autowired
-    MockMvc mvc;
-
-    @Autowired
-    ObjectMapper mapper;
-
-    private String token(String email) throws Exception {
-        String json = mvc.perform(post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"%s","password":"Secret123","firstName":"P","lastName":"Y"}
-                                """.formatted(email)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        return mapper.readTree(json).get("accessToken").asText();
-    }
-
-    private String openAccount(String token) throws Exception {
-        String json = mvc.perform(post("/api/v1/accounts")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"CHECKING\"}"))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        return mapper.readTree(json).get("id").asText();
-    }
 
     private JsonNode topUp(String token, String accountId, String amount) throws Exception {
         String json = mvc.perform(post("/api/v1/payments/top-up")
@@ -64,8 +33,8 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void topUpThenConfirmCreditsAccount() throws Exception {
-        String token = token("pay-topup@example.com");
-        String acct = openAccount(token);
+        String token = registerVerified("pay-topup@example.com");
+        String acct = openAccount(token).get("id").asText();
 
         JsonNode created = topUp(token, acct, "100.00");
         assertThat(created.get("manualConfirm").asBoolean()).isTrue(); // simulated gateway
@@ -81,8 +50,8 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void doubleConfirmCreditsOnce() throws Exception {
-        String token = token("pay-idem@example.com");
-        String acct = openAccount(token);
+        String token = registerVerified("pay-idem@example.com");
+        String acct = openAccount(token).get("id").asText();
         String paymentId = topUp(token, acct, "40.00").get("paymentId").asText();
 
         for (int i = 0; i < 2; i++) {
@@ -90,7 +59,6 @@ class PaymentIntegrationTest extends AbstractIntegrationTest {
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk());
         }
-        // Idempotent: the account is credited once despite two confirmations.
         assertThat(balance(token, acct)).isEqualTo(40.00);
     }
 }

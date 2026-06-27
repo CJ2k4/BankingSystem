@@ -1,8 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../context/AuthContext'
-import { listAllUsers, listAudit, setKyc, type KycStatus } from '../lib/admin'
-import { formatDateTime } from '../lib/format'
+import { useState } from 'react'
+import {
+  listAdminAccounts,
+  listAllUsers,
+  listAudit,
+  setKyc,
+  tellerDeposit,
+  type KycStatus,
+} from '../lib/admin'
+import { formatDateTime, formatMoney } from '../lib/format'
+import { apiErrorMessage } from '../lib/errors'
 
 const KYC_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-800',
@@ -90,8 +99,67 @@ export default function AdminPage() {
         {kycM.isError && <p className="mt-3 text-sm text-red-600">Could not update KYC.</p>}
       </section>
 
+      <TellerDeposit />
       <AuditLog />
     </AppLayout>
+  )
+}
+
+function TellerDeposit() {
+  const qc = useQueryClient()
+  const { data } = useQuery({ queryKey: ['admin-accounts'], queryFn: listAdminAccounts })
+  const [amounts, setAmounts] = useState<Record<string, string>>({})
+  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+
+  const depositM = useMutation({
+    mutationFn: ({ number, amount }: { number: string; amount: number }) => tellerDeposit(number, amount),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['admin-accounts'] })
+      setAmounts((a) => ({ ...a, [vars.number]: '' }))
+      setMsg({ kind: 'ok', text: `Deposited to ${vars.number}` })
+    },
+    onError: (e) => setMsg({ kind: 'err', text: apiErrorMessage(e) }),
+  })
+
+  const accounts = data ?? []
+
+  return (
+    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+      <h2 className="text-lg font-semibold">Teller deposit</h2>
+      <p className="mt-1 text-sm text-slate-500">Record a cash deposit into a customer's account.</p>
+      <div className="mt-4 space-y-2">
+        {accounts.length === 0 && <p className="text-sm text-slate-500">No customer accounts yet.</p>}
+        {accounts.map((a) => (
+          <div key={a.accountNumber} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm">
+            <span>
+              <span className="font-mono">{a.accountNumber}</span> · {a.type} ·{' '}
+              <span className="text-slate-500">{a.ownerEmail}</span> · {formatMoney(a.balance, a.currency)}
+            </span>
+            <span className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={amounts[a.accountNumber] ?? ''}
+                onChange={(e) => setAmounts((m) => ({ ...m, [a.accountNumber]: e.target.value }))}
+                placeholder="0.00"
+                className="w-28 rounded-lg border border-slate-300 px-2 py-1.5"
+              />
+              <button
+                onClick={() =>
+                  depositM.mutate({ number: a.accountNumber, amount: Number(amounts[a.accountNumber]) })
+                }
+                disabled={!(Number(amounts[a.accountNumber]) > 0) || depositM.isPending}
+                className="rounded-lg bg-green-600 px-3 py-1.5 font-medium text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                Deposit
+              </button>
+            </span>
+          </div>
+        ))}
+      </div>
+      {msg && <p className={`mt-2 text-sm ${msg.kind === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>}
+    </section>
   )
 }
 

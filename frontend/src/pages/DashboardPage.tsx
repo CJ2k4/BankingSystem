@@ -68,6 +68,9 @@ export default function DashboardPage() {
         {!isLoading && customerAccounts.length === 0 && (
           <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-500">
             No accounts yet. Open your first account to get started.
+            <div className="mt-1 text-xs text-slate-400">
+              Your KYC must be verified by an admin before you can open an account.
+            </div>
           </div>
         )}
         {customerAccounts.map((a) => (
