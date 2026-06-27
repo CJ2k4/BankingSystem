@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
+import { unreadCount } from '../lib/notifications'
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
+  const { data: unread = 0 } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: unreadCount,
+    refetchInterval: 15_000,
+  })
 
   const navLink = (to: string, label: string) => (
     <Link
@@ -33,6 +40,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {user?.role === 'ADMIN' && navLink('/admin', 'Admin')}
           </div>
           <div className="flex items-center gap-3">
+            <Link to="/notifications" className="relative text-lg" title="Notifications">
+              🔔
+              {unread > 0 && (
+                <span className="absolute -right-2 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </Link>
             <span className="text-sm text-slate-500">{user?.email}</span>
             <button
               onClick={logout}

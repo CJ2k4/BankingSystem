@@ -2,6 +2,10 @@ package com.bank.customer.service;
 
 import com.bank.auth.domain.User;
 import com.bank.auth.repo.UserRepository;
+import com.bank.common.SecurityUtils;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.NotFoundException;
 import com.bank.customer.domain.CustomerProfile;
 import com.bank.customer.domain.KycStatus;
@@ -21,10 +25,13 @@ public class CustomerService {
 
     private final UserRepository userRepository;
     private final CustomerProfileRepository profileRepository;
+    private final EventPublisher eventPublisher;
 
-    public CustomerService(UserRepository userRepository, CustomerProfileRepository profileRepository) {
+    public CustomerService(UserRepository userRepository, CustomerProfileRepository profileRepository,
+                           EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -65,6 +72,10 @@ public class CustomerService {
         User user = requireUser(userId);
         CustomerProfile profile = requireProfile(userId);
         profile.setKycStatus(status);
+        String action = status == KycStatus.VERIFIED ? EventActions.KYC_VERIFIED : EventActions.KYC_REJECTED;
+        UUID actor = SecurityUtils.currentUserId();
+        eventPublisher.publish(DomainEvent.of(action, actor, userId, "KYC", userId.toString(),
+                "Your identity verification is now " + status, true));
         return toResponse(user, profile);
     }
 

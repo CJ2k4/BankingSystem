@@ -11,3 +11,18 @@ export async function setKyc(userId: string, status: KycStatus): Promise<Profile
   const { data } = await api.post<Profile>(`/api/v1/admin/users/${userId}/kyc`, { status })
   return data
 }
+
+export interface AuditEntry {
+  id: string
+  actorUserId: string | null
+  action: string
+  entityType: string
+  entityId: string | null
+  message: string
+  createdAt: string
+}
+
+export async function listAudit(size = 50): Promise<AuditEntry[]> {
+  const { data } = await api.get<AuditEntry[]>('/api/v1/admin/audit', { params: { size } })
+  return data
+}

@@ -12,6 +12,9 @@ import com.bank.card.dto.IssueCardResponse;
 import com.bank.card.dto.CardResponse;
 import com.bank.card.repo.CardPaymentRepository;
 import com.bank.card.repo.CardRepository;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.NotFoundException;
 import com.bank.common.exception.PaymentDeclinedException;
 import com.bank.ledger.domain.Transaction;
@@ -39,15 +42,18 @@ public class CardService {
     private final CardPaymentRepository cardPaymentRepository;
     private final AccountRepository accountRepository;
     private final LedgerService ledgerService;
+    private final EventPublisher eventPublisher;
 
     public CardService(CardRepository cardRepository,
                        CardPaymentRepository cardPaymentRepository,
                        AccountRepository accountRepository,
-                       LedgerService ledgerService) {
+                       LedgerService ledgerService,
+                       EventPublisher eventPublisher) {
         this.cardRepository = cardRepository;
         this.cardPaymentRepository = cardPaymentRepository;
         this.accountRepository = accountRepository;
         this.ledgerService = ledgerService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -105,6 +111,8 @@ public class CardService {
                         PostingLine.credit(system.getId(), amount)));
 
         cardPaymentRepository.save(new CardPayment(card.getId(), txn.getId(), merchant, amount));
+        eventPublisher.publish(DomainEvent.userAction(EventActions.CARD_PAYMENT, userId, "CARD",
+                card.getId().toString(), "Card payment of " + amount + " to " + merchant));
         return new CardPaymentResponse(txn.getReference(), merchant, amount, account.getBalance());
     }
 

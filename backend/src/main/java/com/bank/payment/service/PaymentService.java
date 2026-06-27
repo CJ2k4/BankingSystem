@@ -3,6 +3,9 @@ package com.bank.payment.service;
 import com.bank.account.domain.Account;
 import com.bank.account.domain.AccountType;
 import com.bank.account.repo.AccountRepository;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.NotFoundException;
 import com.bank.ledger.domain.TransactionType;
 import com.bank.ledger.service.LedgerService;
@@ -27,15 +30,18 @@ public class PaymentService {
     private final AccountRepository accountRepository;
     private final LedgerService ledgerService;
     private final PaymentGateway gateway;
+    private final EventPublisher eventPublisher;
 
     public PaymentService(PaymentRepository paymentRepository,
                           AccountRepository accountRepository,
                           LedgerService ledgerService,
-                          PaymentGateway gateway) {
+                          PaymentGateway gateway,
+                          EventPublisher eventPublisher) {
         this.paymentRepository = paymentRepository;
         this.accountRepository = accountRepository;
         this.ledgerService = ledgerService;
         this.gateway = gateway;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -86,5 +92,8 @@ public class PaymentService {
                 PostingLine.debit(system.getId(), payment.getAmount())));
 
         payment.setStatus(PaymentStatus.SUCCEEDED);
+        eventPublisher.publish(DomainEvent.userAction(EventActions.TOP_UP_SUCCEEDED, payment.getUserId(),
+                "PAYMENT", payment.getId().toString(),
+                "Your top-up of " + payment.getAmount() + " succeeded"));
     }
 }

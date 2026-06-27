@@ -4,6 +4,9 @@ import com.bank.account.domain.Account;
 import com.bank.account.domain.AccountStatus;
 import com.bank.account.domain.AccountType;
 import com.bank.account.repo.AccountRepository;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.NotFoundException;
 import com.bank.ledger.domain.LedgerEntry;
 import com.bank.ledger.domain.TransactionType;
@@ -26,13 +29,16 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
     private final LedgerService ledgerService;
+    private final EventPublisher eventPublisher;
 
     public AccountService(AccountRepository accountRepository,
                           LedgerEntryRepository ledgerEntryRepository,
-                          LedgerService ledgerService) {
+                          LedgerService ledgerService,
+                          EventPublisher eventPublisher) {
         this.accountRepository = accountRepository;
         this.ledgerEntryRepository = ledgerEntryRepository;
         this.ledgerService = ledgerService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -65,6 +71,8 @@ public class AccountService {
         ledgerService.post(TransactionType.DEPOSIT, "Deposit", null, List.of(
                 PostingLine.credit(account.getId(), amount),
                 PostingLine.debit(system.getId(), amount)));
+        eventPublisher.publish(DomainEvent.userAction(EventActions.DEPOSIT, userId, "ACCOUNT",
+                accountId.toString(), "Deposit of " + amount + " to " + account.getAccountNumber()));
         return account;
     }
 
@@ -75,6 +83,8 @@ public class AccountService {
         ledgerService.post(TransactionType.WITHDRAWAL, "Withdrawal", null, List.of(
                 PostingLine.debit(account.getId(), amount),
                 PostingLine.credit(system.getId(), amount)));
+        eventPublisher.publish(DomainEvent.userAction(EventActions.WITHDRAWAL, userId, "ACCOUNT",
+                accountId.toString(), "Withdrawal of " + amount + " from " + account.getAccountNumber()));
         return account;
     }
 

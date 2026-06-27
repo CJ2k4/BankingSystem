@@ -4,6 +4,9 @@ import com.bank.account.domain.Account;
 import com.bank.account.domain.AccountStatus;
 import com.bank.account.domain.AccountType;
 import com.bank.account.repo.AccountRepository;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.NotFoundException;
 import com.bank.ledger.domain.Transaction;
 import com.bank.ledger.domain.TransactionType;
@@ -22,10 +25,13 @@ public class TransferService {
 
     private final AccountRepository accountRepository;
     private final LedgerService ledgerService;
+    private final EventPublisher eventPublisher;
 
-    public TransferService(AccountRepository accountRepository, LedgerService ledgerService) {
+    public TransferService(AccountRepository accountRepository, LedgerService ledgerService,
+                           EventPublisher eventPublisher) {
         this.accountRepository = accountRepository;
         this.ledgerService = ledgerService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -56,6 +62,14 @@ public class TransferService {
         Transaction txn = ledgerService.post(TransactionType.TRANSFER, description, idempotencyKey, List.of(
                 PostingLine.debit(source.getId(), amount),
                 PostingLine.credit(destination.getId(), amount)));
+
+        eventPublisher.publish(DomainEvent.of(EventActions.TRANSFER_SENT, userId, userId, "TRANSFER",
+                txn.getReference(), "You sent " + amount + " to " + destination.getAccountNumber(), true));
+        if (destination.getOwnerUserId() != null) {
+            eventPublisher.publish(DomainEvent.of(EventActions.TRANSFER_RECEIVED, userId,
+                    destination.getOwnerUserId(), "TRANSFER", txn.getReference(),
+                    "You received " + amount + " from " + source.getAccountNumber(), true));
+        }
 
         return new TransferResponse(
                 txn.getReference(),

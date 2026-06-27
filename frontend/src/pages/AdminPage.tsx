@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import AppLayout from '../components/AppLayout'
 import { useAuth } from '../context/AuthContext'
-import { listAllUsers, setKyc, type KycStatus } from '../lib/admin'
+import { listAllUsers, listAudit, setKyc, type KycStatus } from '../lib/admin'
+import { formatDateTime } from '../lib/format'
 
 const KYC_STYLES: Record<string, string> = {
   PENDING: 'bg-amber-100 text-amber-800',
@@ -88,6 +89,46 @@ export default function AdminPage() {
         )}
         {kycM.isError && <p className="mt-3 text-sm text-red-600">Could not update KYC.</p>}
       </section>
+
+      <AuditLog />
     </AppLayout>
+  )
+}
+
+function AuditLog() {
+  const { data, isLoading } = useQuery({ queryKey: ['admin-audit'], queryFn: () => listAudit(50) })
+  const entries = data ?? []
+
+  return (
+    <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+      <h2 className="text-lg font-semibold">Audit log</h2>
+      <p className="mt-1 text-sm text-slate-500">Recent domain events (append-only).</p>
+      {isLoading ? (
+        <p className="mt-3 text-slate-500">Loading…</p>
+      ) : entries.length === 0 ? (
+        <p className="mt-3 text-slate-500">No audit entries yet.</p>
+      ) : (
+        <table className="mt-4 w-full text-sm">
+          <thead>
+            <tr className="text-left text-slate-400">
+              <th className="pb-2">Time</th>
+              <th className="pb-2">Action</th>
+              <th className="pb-2">Entity</th>
+              <th className="pb-2">Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => (
+              <tr key={e.id} className="border-t border-slate-100">
+                <td className="py-1.5 text-slate-500">{formatDateTime(e.createdAt)}</td>
+                <td className="py-1.5 font-medium">{e.action}</td>
+                <td className="py-1.5 text-slate-500">{e.entityType}</td>
+                <td className="py-1.5">{e.message}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   )
 }

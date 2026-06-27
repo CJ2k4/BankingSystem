@@ -7,6 +7,9 @@ import com.bank.auth.dto.LoginRequest;
 import com.bank.auth.dto.RegisterRequest;
 import com.bank.auth.repo.UserRepository;
 import com.bank.auth.security.JwtService;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.ConflictException;
 import com.bank.customer.domain.CustomerProfile;
 import com.bank.customer.repo.CustomerProfileRepository;
@@ -25,17 +28,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final EventPublisher eventPublisher;
 
     public AuthService(UserRepository userRepository,
                        CustomerProfileRepository profileRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
-                       RefreshTokenService refreshTokenService) {
+                       RefreshTokenService refreshTokenService,
+                       EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -48,6 +54,8 @@ public class AuthService {
                 new User(email, passwordEncoder.encode(request.password()), Role.CUSTOMER));
         profileRepository.save(
                 new CustomerProfile(user.getId(), request.firstName(), request.lastName()));
+        eventPublisher.publish(DomainEvent.userAction(EventActions.USER_REGISTERED, user.getId(),
+                "USER", user.getId().toString(), "Welcome to the bank, " + request.firstName() + "!"));
         return issueTokens(user);
     }
 

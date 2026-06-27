@@ -4,6 +4,10 @@ import com.bank.account.domain.Account;
 import com.bank.account.domain.AccountStatus;
 import com.bank.account.domain.AccountType;
 import com.bank.account.repo.AccountRepository;
+import com.bank.common.SecurityUtils;
+import com.bank.common.event.DomainEvent;
+import com.bank.common.event.EventActions;
+import com.bank.common.event.EventPublisher;
 import com.bank.common.exception.NotFoundException;
 import com.bank.customer.domain.KycStatus;
 import com.bank.customer.repo.CustomerProfileRepository;
@@ -42,6 +46,7 @@ public class LoanService {
     private final BigDecimal minPrincipal;
     private final BigDecimal maxPrincipal;
     private final int maxTermMonths;
+    private final EventPublisher eventPublisher;
 
     public LoanService(LoanRepository loanRepository,
                        LoanInstallmentRepository installmentRepository,
@@ -49,6 +54,7 @@ public class LoanService {
                        CustomerProfileRepository profileRepository,
                        LedgerService ledgerService,
                        AmortizationCalculator calculator,
+                       EventPublisher eventPublisher,
                        @Value("${app.loans.annual-rate:0.12}") BigDecimal annualRate,
                        @Value("${app.loans.min-principal:100}") BigDecimal minPrincipal,
                        @Value("${app.loans.max-principal:50000}") BigDecimal maxPrincipal,
@@ -59,6 +65,7 @@ public class LoanService {
         this.profileRepository = profileRepository;
         this.ledgerService = ledgerService;
         this.calculator = calculator;
+        this.eventPublisher = eventPublisher;
         this.annualRate = annualRate;
         this.minPrincipal = minPrincipal;
         this.maxPrincipal = maxPrincipal;
@@ -129,6 +136,8 @@ public class LoanService {
 
         if (installmentRepository.countByLoanIdAndStatusNot(loanId, InstallmentStatus.PAID) == 0) {
             loan.setStatus(LoanStatus.PAID_OFF);
+            eventPublisher.publish(DomainEvent.userAction(EventActions.LOAN_PAID_OFF, userId, "LOAN",
+                    loanId.toString(), "Your loan is fully paid off"));
         }
         return loan;
     }
@@ -168,6 +177,9 @@ public class LoanService {
 
         loan.setStatus(LoanStatus.ACTIVE);
         loan.setDisbursedAt(Instant.now());
+        eventPublisher.publish(DomainEvent.of(EventActions.LOAN_APPROVED, SecurityUtils.currentUserId(),
+                loan.getUserId(), "LOAN", loanId.toString(),
+                "Your loan of " + loan.getPrincipal() + " was approved and disbursed", true));
         return loan;
     }
 

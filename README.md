@@ -5,9 +5,9 @@ correct money handling (double-entry ledger), security, and a real deployment.
 
 > ⚠️ Simulated bank — no real money. Cards/payments use **Stripe test mode** (added in Phase 4).
 
-- **Backend:** Java 21, Spring Boot 3.5, Spring Security, JPA, PostgreSQL, Redis, Flyway, springdoc/OpenAPI
+- **Backend:** Java 21, Spring Boot 3.5, Spring Security, JPA, PostgreSQL, Redis, Kafka, Flyway, springdoc/OpenAPI
 - **Frontend:** React 19 + TypeScript, Vite, Tailwind CSS, React Query, React Router
-- **Infra:** Docker Compose (Postgres + Redis), GitHub Actions CI, Testcontainers
+- **Infra:** Docker Compose (Postgres + Redis + Kafka), GitHub Actions CI, Testcontainers
 
 See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased roadmap.
 
@@ -24,12 +24,28 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased 
 - **Phase 4 — Cards & payments ✅** — tokenized **virtual cards** (one-time PAN, freeze/cancel,
   monthly spend limits), card purchases that debit the account, and **account top-ups** through a
   **Stripe**-or-simulated payment gateway (idempotent fulfilment).
-- **Phase 5 — Loans & interest ✅** (current) — loan applications (KYC-gated), admin approval that
+- **Phase 5 — Loans & interest ✅** — loan applications (KYC-gated), admin approval that
   generates an **amortization schedule** and disburses the principal, installment **repayments**,
   and a **scheduled job** that flags overdue installments. All disbursements/repayments flow
   through the ledger. Loans UI + (admin) approvals panel.
+- **Phase 6 — Notifications & audit ✅** (current) — **event-driven** via **Kafka**: services
+  publish domain events that independent consumers turn into in-app **notifications** (+ email)
+  and an append-only **audit log**. Notifications bell + page; admin audit viewer + KYC panel.
 
-The five core banking domains are complete. Remaining roadmap: notifications, audit log, observability, and deployment.
+Remaining roadmap: observability and deployment.
+
+### Notifications & Audit API (Phase 6)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/v1/notifications` | bearer | List my notifications |
+| GET | `/api/v1/notifications/unread-count` | bearer | Unread count (bell badge) |
+| POST | `/api/v1/notifications/{id}/read` `/read-all` | bearer | Mark read |
+| GET | `/api/v1/admin/audit` | ADMIN | Recent audit entries |
+
+Domain events flow over Kafka topic `banking.events`; two consumer groups
+(`notifications`, `audit`) process every event independently and idempotently (deduped by
+`eventId`). Email is **simulated by default**; set `SPRING_MAIL_HOST` (e.g. Mailtrap) for real SMTP.
 
 ### Loans API (Phase 5)
 
@@ -120,8 +136,8 @@ zero) against the customer account and a system settlement account, in one DB tr
 # 1. (optional) create your env file
 cp .env.example .env
 
-# 2. start Postgres + Redis  (host port 5433 -> container 5432)
-docker compose up -d postgres redis
+# 2. start Postgres + Redis + Kafka  (Postgres host port 5433 -> container 5432)
+docker compose up -d postgres redis kafka
 
 # 3. run the backend
 cd backend && ./mvnw spring-boot:run
