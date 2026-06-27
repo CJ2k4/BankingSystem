@@ -30,6 +30,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             {navLink('/cards', 'Cards')}
             {navLink('/loans', 'Loans')}
             {navLink('/profile', 'Profile')}
+            {user?.role === 'ADMIN' && navLink('/admin', 'Admin')}
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500">{user?.email}</span>

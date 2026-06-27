@@ -30,7 +30,9 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(UUID userId) {
         User user = requireUser(userId);
-        CustomerProfile profile = requireProfile(userId);
+        // Staff accounts (e.g. the seeded admin) have no customer profile; return
+        // just the identity rather than 404 so they can sign in to the UI.
+        CustomerProfile profile = profileRepository.findByUserId(userId).orElse(null);
         return toResponse(user, profile);
     }
 
@@ -81,13 +83,13 @@ public class CustomerService {
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                p.getFirstName(),
-                p.getLastName(),
-                p.getDateOfBirth(),
-                p.getPhone(),
-                p.getAddressLine1(),
-                p.getCity(),
-                p.getCountry(),
-                p.getKycStatus());
+                p == null ? null : p.getFirstName(),
+                p == null ? null : p.getLastName(),
+                p == null ? null : p.getDateOfBirth(),
+                p == null ? null : p.getPhone(),
+                p == null ? null : p.getAddressLine1(),
+                p == null ? null : p.getCity(),
+                p == null ? null : p.getCountry(),
+                p == null ? null : p.getKycStatus());
     }
 }
