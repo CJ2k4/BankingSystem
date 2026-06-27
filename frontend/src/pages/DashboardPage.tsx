@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import AppLayout from '../components/AppLayout'
 import { createAccount, listAccounts, type AccountType } from '../lib/accounts'
@@ -8,6 +8,7 @@ import { apiErrorMessage } from '../lib/errors'
 
 export default function DashboardPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [type, setType] = useState<AccountType>('CHECKING')
 
   const { data: accounts, isLoading, isError } = useQuery({
@@ -35,6 +36,12 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/transfer')}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+          >
+            Send money
+          </button>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as AccountType)}

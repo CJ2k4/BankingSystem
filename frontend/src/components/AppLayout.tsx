@@ -26,6 +26,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               🏦 Banking System
             </Link>
             {navLink('/', 'Dashboard')}
+            {navLink('/transfer', 'Transfer')}
             {navLink('/profile', 'Profile')}
           </div>
           <div className="flex items-center gap-3">

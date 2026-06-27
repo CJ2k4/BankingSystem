@@ -16,11 +16,26 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for the full architecture and phased 
 - **Phase 0 — Scaffold & infra ✅**
 - **Phase 1 — Auth & users ✅** — registration, login, JWT access + rotating
   refresh tokens (Redis), RBAC, KYC profiles, admin verification, signup/login/profile UI.
-- **Phase 2 — Accounts & ledger ✅** (current) — open accounts, deposits/withdrawals
-  on a **double-entry ledger** (balanced debit/credit entries, `BigDecimal`, pessimistic
-  locking, running balance), a dashboard + account detail UI with transaction history.
+- **Phase 2 — Accounts & ledger ✅** — open accounts, deposits/withdrawals on a
+  **double-entry ledger** (balanced debit/credit entries, `BigDecimal`, pessimistic
+  locking, running balance), dashboard + account detail UI with transaction history.
+- **Phase 3 — Transfers & beneficiaries ✅** (current) — account-to-account transfers
+  with **idempotency keys** (a retried request never double-spends), saved payees, and a
+  transfer UI. Transfers reuse the ledger, so they post atomically and balance to zero.
 
-Later phases add transfers, cards/payments, and loans.
+Later phases add cards/payments and loans.
+
+### Transfers API (Phase 3)
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/transfers` | bearer | Transfer money (send `Idempotency-Key` header) |
+| GET | `/api/v1/beneficiaries` | bearer | List saved payees |
+| POST | `/api/v1/beneficiaries` | bearer | Save a payee |
+| DELETE | `/api/v1/beneficiaries/{id}` | bearer | Delete a payee |
+
+Supplying an `Idempotency-Key` makes a transfer safe to retry: the server posts the
+underlying ledger transaction at most once per key.
 
 ### Accounts API (Phase 2)
 

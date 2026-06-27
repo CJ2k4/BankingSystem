@@ -18,6 +18,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     Optional<Account> findByIdAndOwnerUserId(UUID id, UUID ownerUserId);
 
+    Optional<Account> findByAccountNumber(String accountNumber);
+
     Optional<Account> findFirstByTypeAndCurrency(AccountType type, String currency);
 
     boolean existsByAccountNumber(String accountNumber);
