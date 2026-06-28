@@ -10,9 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.List;
@@ -85,6 +87,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex,
                                                        HttpServletRequest request) {
         return status(HttpStatus.FORBIDDEN, "Access denied", request);
+    }
+
+    /**
+     * Preserve the status of Spring's own error responses (e.g. a 404 for an unknown
+     * route, a 405 for a wrong method) instead of letting the catch-all turn them into 500.
+     */
+    @ExceptionHandler(ErrorResponseException.class)
+    public ResponseEntity<ApiError> handleErrorResponse(ErrorResponseException ex,
+                                                        HttpServletRequest request) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        return status(status, status.getReasonPhrase(), request);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResource(NoResourceFoundException ex,
+                                                     HttpServletRequest request) {
+        return status(HttpStatus.NOT_FOUND, "Resource not found", request);
     }
 
     private ResponseEntity<ApiError> status(HttpStatus status, String message, HttpServletRequest request) {

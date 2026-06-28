@@ -22,6 +22,16 @@ class AdminDepositIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void customerSelfDepositEndpointIsGone() throws Exception {
+        String token = registerVerified("self-deposit-gone@example.com");
+        String accountId = openAccount(token).get("id").asText();
+        mvc.perform(post("/api/v1/accounts/" + accountId + "/deposit")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"amount\":50.00}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void customerCannotUseTellerDeposit() throws Exception {
         String token = registerVerified("teller-denied@example.com");
         String number = openAccount(token).get("accountNumber").asText();
